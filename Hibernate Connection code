@@ -1,0 +1,125 @@
+Creating Spring ORM Project->
+1.  New Maven project, ->archetype-quickstart, ->com.spring.orm
+
+2.  In pom.xml,
+    <dependencies>
+        <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>5.3.10</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>5.3.10</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-orm</artifactId>
+        <version>5.3.10</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>5.6.6.Final</version>
+    </dependency>
+
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>8.0.29</version>
+    </dependency>
+
+3.  Create "config.xml" in com.spring.orm->
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns = "http://www.springframework.org/schema/beans"
+        xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:p="http://www.springframework.org/schema/p"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation = "http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+        
+        <tx:annotation-driven/>
+        
+        <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource" name="ds">
+            <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+            <property name="url" value="jdbc:mysql://localhost:3306/springjdbc"/>
+            <property name="username" value="root"/>
+            <property name="password" value=""/>
+        </bean>
+        
+        <bean class="org.springframework.orm.hibernate5.LocalSessionFactoryBean" name="factory">
+            <property name="dataSource" ref="ds"/>
+            <property name="hibernateProperties">
+                <props>
+                    <prop key="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</prop>
+                    <prop key="hibernate.hbm2ddl.auto">update</prop>
+                    <prop key="hibernate.show_sql">true</prop>
+                </props>
+            </property>
+            <property name="annotatedClasses">
+                <list>
+                    <value>com.spring.orm.entities.Student</value>
+                </list>
+            </property>
+        </bean>
+        
+        <bean class="org.springframework.orm.hibernate5.HibernateTemplate" name="hibernateTemplate">
+            <property name="sessionFactory" ref="factory"></property>
+        </bean>
+        
+        <bean class="com.spring.orm.dao.StudentDao" name="studentDao">
+            <property name="hibernateTemplate" ref="hibernateTemplate"></property>
+        </bean>
+        
+        <bean class="org.springframework.orm.hibernate5.HibernateTransactionManager" name="transactionManager">
+            <property name="sessionFactory" ref="factory"/>
+        </bean>
+    </beans>	
+
+4.  Create "Student" class in com.spring.orm.entities
+    import javax.persistence.Entity;
+    @Entity
+    public class Student {
+        @Id
+        @Column(name="student_id")
+        private int studentId;
+        @Column(name="student_name")
+        private String studentName;
+        @Column(name="student_city")
+        private String studentCity;
+    }
+
+5.  Create "StudentDao" in com.spring.orm.dao
+    import javax.transaction.Transactional;
+
+    public class StudentDao {
+        private HibernateTemplate hibernateTemplate;
+        
+        @Transactional
+        public int insert(Student student) {
+            int result = (int) this.hibernateTemplate.save(student);
+            return 1;
+        }
+        //getter-setter, constructor
+    }
+
+6.  In App.java,
+    public static void main( String[] args )
+    {	
+        ApplicationContext context = new ClassPathXmlApplicationContext("com/spring/orm/config.xml");
+        StudentDao studentDao = context.getBean("studentDao", StudentDao.class);
+        
+        Student student = new Student(148, "Swarn", "Banglore");
+        int result = studentDao.insert(student);
+        System.out.println(result);
+    }
+
